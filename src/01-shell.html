@@ -1,0 +1,160 @@
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Midterm Review</p>
+    <h1>Biblical Care &amp; Counseling</h1>
+    <p class="sub">Key figures &middot; organizations &middot; history &amp; generations &middot; theological distinctives &middot; essays</p>
+    <svg class="orn" viewBox="0 0 320 44" aria-hidden="true"><use href="#flourish"/></svg>
+  </header>
+
+  <nav class="topics" role="tablist" aria-label="Topics">
+    <button class="topic-btn" role="tab" data-topic="guide"    aria-selected="true">Midterm Guide</button>
+    <button class="topic-btn" role="tab" data-topic="people"   aria-selected="false">Key Figures</button>
+    <button class="topic-btn" role="tab" data-topic="orgs"     aria-selected="false">Organizations</button>
+    <button class="topic-btn" role="tab" data-topic="history"  aria-selected="false">History &amp; Generations</button>
+    <button class="topic-btn" role="tab" data-topic="theology" aria-selected="false">Theology</button>
+    <button class="topic-btn" role="tab" data-topic="essays"   aria-selected="false">Essays &amp; Cases</button>
+    <button class="topic-btn" role="tab" data-topic="exam"     aria-selected="false">Mock Exam</button>
+  </nav>
+
+  <main>
+
+    <!-- ================= MIDTERM GUIDE ================= -->
+    <section class="topic" id="topic-guide">
+      <p class="intro">Everything the Midterm Exam Guidance asks you to know, in its own order and words. Check an item off once you can explain it without looking; <b>Study it</b> jumps to the full material.</p>
+      <div class="modes"><div class="seg" data-modes="guide">
+        <button type="button" data-mode="overview" aria-pressed="true">The review list</button>
+      </div></div>
+      <div class="panel" data-panel="guide/overview"><div id="guideRoot"></div></div>
+    </section>
+
+    <!-- ================= KEY FIGURES ================= -->
+    <section class="topic" id="topic-people" hidden>
+      <p class="intro">The nine names on the study guide, plus the people around them. Know each one&rsquo;s contribution and why it matters for the movement &mdash; and which of them were <i>not</i> part of it.</p>
+      <div class="modes"><div class="seg" data-modes="people">
+        <button type="button" data-mode="chart" aria-pressed="true">Chart</button>
+        <button type="button" data-mode="cards" aria-pressed="false">Flashcards</button>
+        <button type="button" data-mode="match" aria-pressed="false">Match</button>
+        <button type="button" data-mode="quiz" aria-pressed="false">Quiz</button>
+      </div></div>
+      <div class="panel" data-panel="people/chart">
+        <div class="filters">
+          <span class="label">Show</span>
+          <div class="seg" id="pFilter">
+            <button type="button" data-pf="guide" aria-pressed="true">On the study guide</button>
+            <button type="button" data-pf="all" aria-pressed="false">Everyone</button>
+            <button type="button" data-pf="notbcm" aria-pressed="false">Not BCM</button>
+          </div>
+        </div>
+        <div class="pgrid" id="peopleGrid"></div>
+      </div>
+      <div class="panel" data-panel="people/cards" hidden>
+        <p class="hint">Front: the name. Back: who they were and why they matter. Space flips, arrows move.</p>
+        <div class="toolbar"><button class="btn" type="button" id="pcShuffle">Shuffle deck</button></div>
+        <div id="peopleCards"></div>
+      </div>
+      <div class="panel" data-panel="people/match" hidden>
+        <p class="hint">Tap a name, then the line that describes them.</p>
+        <div id="peopleMatch"></div>
+      </div>
+      <div class="panel" data-panel="people/quiz" hidden>
+        <p class="hint">Multiple choice and true/false, like the exam. Keys <kbd>1</kbd>&ndash;<kbd>4</kbd> answer, <kbd>Enter</kbd> moves on.</p>
+        <div id="peopleQuiz"></div>
+      </div>
+    </section>
+
+    <!-- ================= ORGANIZATIONS ================= -->
+    <section class="topic" id="topic-orgs">
+      <p class="intro">Think in roles and relationships: some train, some certify, some publish, some counsel, some build coalitions. The study guide singles out CCEF, NANC/ACBC, ABC and BCC &mdash; the comparison table is for those four.</p>
+      <div class="modes"><div class="seg" data-modes="orgs">
+        <button type="button" data-mode="chart" aria-pressed="true">Chart</button>
+        <button type="button" data-mode="cards" aria-pressed="false">Flashcards</button>
+        <button type="button" data-mode="match" aria-pressed="false">Match</button>
+        <button type="button" data-mode="quiz" aria-pressed="false">Quiz</button>
+      </div></div>
+      <div class="panel" data-panel="orgs/chart"><div id="orgChart"></div></div>
+      <div class="panel" data-panel="orgs/cards" hidden>
+        <div class="toolbar"><button class="btn" type="button" id="ocShuffle">Shuffle deck</button></div>
+        <div id="orgCards"></div>
+      </div>
+      <div class="panel" data-panel="orgs/match" hidden><div id="orgMatch"></div></div>
+      <div class="panel" data-panel="orgs/quiz" hidden><div id="orgQuiz"></div></div>
+    </section>
+
+    <!-- ================= HISTORY ================= -->
+    <section class="topic" id="topic-history">
+      <p class="intro">How did biblical counseling develop? The mid-1800s shift, the hundred-year drift, the 1960s rethinking, and three generations of a movement &mdash; broad phases, not rigid bins.</p>
+      <div class="modes"><div class="seg" data-modes="history">
+        <button type="button" data-mode="story" aria-pressed="true">The Shift</button>
+        <button type="button" data-mode="timeline" aria-pressed="false">Timeline</button>
+        <button type="button" data-mode="gens" aria-pressed="false">Generations</button>
+        <button type="button" data-mode="cards" aria-pressed="false">Flashcards</button>
+        <button type="button" data-mode="match" aria-pressed="false">Match</button>
+        <button type="button" data-mode="quiz" aria-pressed="false">Quiz</button>
+      </div></div>
+      <div class="panel" data-panel="history/story"><div id="histStory"></div></div>
+      <div class="panel" data-panel="history/timeline" hidden><div id="histTimeline"></div></div>
+      <div class="panel" data-panel="history/gens" hidden><div id="histGens"></div></div>
+      <div class="panel" data-panel="history/cards" hidden>
+        <div class="toolbar"><button class="btn" type="button" id="hcShuffle">Shuffle deck</button></div>
+        <div id="histCards"></div>
+      </div>
+      <div class="panel" data-panel="history/match" hidden><div id="histMatch"></div></div>
+      <div class="panel" data-panel="history/quiz" hidden><div id="histQuiz"></div></div>
+    </section>
+
+    <!-- ================= THEOLOGY ================= -->
+    <section class="topic" id="topic-theology">
+      <p class="intro">The theological distinctives that inform the movement: what &ldquo;counseling&rdquo; is, the sufficiency of Scripture, common grace and secular material, the biblical framework of humanity, and the protectors&ndash;explorers debate.</p>
+      <div class="modes"><div class="seg" data-modes="theology">
+        <button type="button" data-mode="notes" aria-pressed="true">Notes</button>
+        <button type="button" data-mode="cards" aria-pressed="false">Flashcards</button>
+        <button type="button" data-mode="match" aria-pressed="false">Match</button>
+        <button type="button" data-mode="quiz" aria-pressed="false">Quiz</button>
+      </div></div>
+      <div class="panel" data-panel="theology/notes"><div id="theoNotes"></div></div>
+      <div class="panel" data-panel="theology/cards" hidden>
+        <div class="toolbar">
+          <span class="label">Deck</span>
+          <div class="seg" id="tDeck">
+            <button type="button" data-tdeck="terms" aria-pressed="true">Terms</button>
+            <button type="button" data-tdeck="verses" aria-pressed="false">Key passages</button>
+          </div>
+          <button class="btn" type="button" id="tcShuffle">Shuffle deck</button>
+        </div>
+        <div id="theoCards"></div>
+      </div>
+      <div class="panel" data-panel="theology/match" hidden><div id="theoMatch"></div></div>
+      <div class="panel" data-panel="theology/quiz" hidden><div id="theoQuiz"></div></div>
+    </section>
+
+    <!-- ================= ESSAYS ================= -->
+    <section class="topic" id="topic-essays">
+      <p class="intro">Two essays and one reflective question. The outlines below follow the study guide&rsquo;s own wording; the practice room lets you write against the clock and check yourself against the points an answer should hit.</p>
+      <div class="modes"><div class="seg" data-modes="essays">
+        <button type="button" data-mode="outlines" aria-pressed="true">Outlines</button>
+        <button type="button" data-mode="practice" aria-pressed="false">Practice</button>
+        <button type="button" data-mode="cases" aria-pressed="false">Case Studies</button>
+      </div></div>
+      <div class="panel" data-panel="essays/outlines"><div id="essayOutlines"></div></div>
+      <div class="panel" data-panel="essays/practice" hidden><div id="essayPractice"></div></div>
+      <div class="panel" data-panel="essays/cases" hidden><div id="essayCases"></div></div>
+    </section>
+
+    <!-- ================= MOCK EXAM ================= -->
+    <section class="topic" id="topic-exam">
+      <p class="intro">Every question type the exam uses except the essays, drawn from all four topics and reshuffled each time. Instant feedback with the reason.</p>
+      <div class="modes"><div class="seg" data-modes="exam">
+        <button type="button" data-mode="mock" aria-pressed="true">Mock exam</button>
+      </div></div>
+      <div class="panel" data-panel="exam/mock"><div id="mockExam"></div></div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>Built from the Unit 1 and Unit 2 lectures, the Basic Map, and the Midterm Exam Guidance.</p>
+    <span class="keys">Flashcards <kbd>&larr;</kbd> <kbd>&rarr;</kbd> <kbd>Space</kbd> &nbsp;&middot;&nbsp; Quizzes <kbd>1</kbd>&ndash;<kbd>4</kbd> <kbd>Enter</kbd></span>
+  </footer>
+
+</div>

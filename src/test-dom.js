@@ -43,6 +43,7 @@ function answerQuiz(root, label) {
   return root.querySelector('.qbody .result');
 }
 
+(async () => {
 head('landing');
 ok(errors.length === 0, 'no errors while loading', errors.join(' || '));
 ok(visible($('#topic-guide')) && !visible($('#topic-people')), 'opens on the Midterm Guide');
@@ -56,12 +57,36 @@ const cb = $('#guideRoot input[data-g="g-adams"]'); cb.checked = true; cb.dispat
 ok(/1 of 20/.test($('#gCount').textContent), 'checking an item moves the progress', $('#gCount').textContent);
 ok(cb.closest('.gitem').classList.contains('ok'), 'checked item is marked');
 ok(/g-adams":true/.test(w.localStorage.getItem('bcc.guide') || ''), 'the check is saved on the device');
+ok($('#guideRoot [data-gm="0"]').textContent === '1 of 9 ready', 'section header counts its own progress', $('#guideRoot [data-gm="0"]').textContent);
 click($('#gPrint')); ok(w.__printed === 1, 'print button prints');
+
+head('guide sections collapse');
+const gFolds = $$('#guideRoot details.fold');
+ok(gFolds.length === 4 && gFolds.every(f => f.open), 'four guide sections, open on first visit', gFolds.length);
+click($('#guideRoot .foldbar button[data-fx="close"]'));
+ok(gFolds.every(f => !f.open), 'collapse all closes them');
+ok(w.localStorage.getItem('bcc.fold:guide-0') === '0', 'closed state remembered');
+click($('#guideRoot .foldbar button[data-fx="open"]'));
+ok(gFolds.every(f => f.open), 'expand all opens them');
+
+head('reset checkmarks');
+click($('#gReset')); ok(/Tap again/.test($('#gReset').textContent), 'first tap asks to confirm');
+click($('#gReset')); ok(/0 of 20/.test($('#gCount').textContent), 'second tap clears', $('#gCount').textContent);
+ok(!$('#guideRoot input[data-g="g-adams"]').checked, 'checkbox cleared');
+const cb2 = $('#guideRoot input[data-g="g-adams"]'); cb2.checked = true; cb2.dispatchEvent(new w.Event('change', { bubbles: true }));
+ok(/1 of 20/.test($('#gCount').textContent), 'checking works again after reset');
 
 head('guide jumps');
 click($('#guideRoot .gitem[data-gi="g-oden"] button[data-go]'));
 ok(visible($('#topic-people')) && visible(panel('people/chart')), 'Oden: jumps to the Key Figures chart');
-ok(d.getElementById('p-oden') && w.__scrolledTo === undefined || true, 'Oden card exists');
+ok(!!d.getElementById('p-oden'), 'Oden card exists');
+await new Promise(r => setTimeout(r, 120));
+ok(w.__scrolledTo === 'p-oden', 'scrolled to the Oden card', w.__scrolledTo);
+ok(d.querySelector('#p-oden details.more').open, 'the card opens its details on arrival');
+topic('guide');
+click($('#guideRoot .gitem[data-gi="g-grace"] button[data-go]'));
+await new Promise(r => setTimeout(r, 120));
+ok(d.getElementById('theo-grace').open && w.__scrolledTo === 'theo-grace', 'common grace: a collapsed section opens on arrival', w.__scrolledTo);
 topic('guide');
 click($('#guideRoot .gitem[data-gi="g-term"] button[data-go]'));
 ok(visible($('#topic-theology')) && visible(panel('theology/notes')), 'term "counseling": jumps to theology notes');
@@ -88,6 +113,27 @@ Object.keys(modes).forEach(t => {
   });
 });
 ok(errors.length === 0, 'no errors after visiting every mode', errors.join(' || '));
+
+head('collapsible content');
+topic('people'); mode('people', 'chart');
+ok($$('#peopleGrid .pcard .line').length === 9, 'each card shows its one-line summary');
+click($('#pFold button[data-fx="close"]'));
+ok($$('#peopleGrid details.more').every(x => !x.open), 'collapse all hides every card’s details');
+click($('#pFold button[data-fx="open"]'));
+ok($$('#peopleGrid details.more').every(x => x.open), 'expand all shows them');
+click($('#pFold button[data-fx="close"]'));
+topic('orgs'); mode('orgs', 'chart');
+ok($$('#orgChart details.fold').length === 3, 'organizations: three sections');
+ok(!$('#orgChart details[data-fold="org-wider"]').open, 'the wider landscape starts collapsed');
+topic('history'); mode('history', 'story');
+ok($$('#histStory details.fold').length === 1 + 5, 'history: the four-questions table plus five story sections');
+topic('theology'); mode('theology', 'notes');
+const tf = $$('#theoNotes details.fold');
+ok(tf.length === 5 && tf[0].open && tf.slice(1).every(x => !x.open || w.localStorage.getItem('bcc.fold:' + x.getAttribute('data-fold')) === '1'), 'theology: five sections, the first open');
+click($('#theoNotes .secnav a[data-a="theo-protect"]'));
+ok(d.getElementById('theo-protect').open && w.__scrolledTo === 'theo-protect', 'section menu opens and scrolls to a collapsed section');
+topic('essays'); mode('essays', 'cases');
+ok($$('#essayCases details.fold').length === 7, 'case studies collapse, seven of them');
 
 head('key figures chart filter');
 topic('people'); mode('people', 'chart');
@@ -119,7 +165,10 @@ head('match');
   const wrongR = R.find(r => r.textContent !== L[0].__right);
   click(L[0]); click(R[R.length - 1]);
   // then solve by reading the underlying data through trial
-  L.forEach(l => { for (const r of R) { if (r.classList.contains('done')) continue; click(l); click(r); if (l.classList.contains('done')) break; } });
+  L.forEach(l => {
+    if (l.classList.contains('done')) return;                 // already matched (the warm-up can land on the right pair)
+    for (const r of R) { if (r.classList.contains('done')) continue; click(l); click(r); if (l.classList.contains('done')) break; }
+  });
   ok(p.querySelectorAll('.tile.done').length === 12, t + ': every pair can be matched', p.querySelectorAll('.tile.done').length);
   ok(p.querySelector('.banner') && p.querySelector('.banner').textContent.length > 10, t + ': round-complete banner with a verdict');
   click(p.querySelector('.toolbar .btn')); ok(p.querySelectorAll('.tile.done').length === 0, t + ': new round resets');
@@ -181,7 +230,38 @@ click($('#prTimer button[data-min="0"]')); ok($('#prClock').textContent === '', 
 topic('guide'); click($('#guideRoot [data-reflect]'));
 ok(visible(panel('essays/practice')) && $('#prSel').value === 'r:0', 'guide "Reflective question" opens the first reflective prompt', $('#prSel').value);
 
+head('search');
+const fb = $('#findBox'), fr = $('#findRes');
+const type = async q => { fb.value = q; fb.dispatchEvent(new w.Event('input', { bubbles: true })); await new Promise(r => setTimeout(r, 140)); };
+await type('Mowrer');
+ok(!fr.hidden && fr.querySelectorAll('a').length >= 3, 'finds Mowrer in several places', fr.querySelectorAll('a').length);
+ok(/Mowrer/.test(fr.querySelector('a .ft').textContent), 'the person comes first', fr.querySelector('a .ft').textContent);
+ok(fr.querySelector('mark') && /mowrer/i.test(fr.querySelector('mark').textContent), 'matches are highlighted');
+click(fr.querySelector('a'));
+await new Promise(r => setTimeout(r, 120));
+ok(fr.hidden && visible($('#topic-people')) && w.__scrolledTo === 'p-mowrer', 'clicking a result jumps to it', w.__scrolledTo);
+await type('2 peter');
+ok(Array.from(fr.querySelectorAll('a .fw')).some(x => /Theology|Key passage/.test(x.textContent)), 'finds a verse reference');
+await type('formal sufficiency');
+ok(/Formal sufficiency/.test(fr.textContent), 'finds a term and shows its meaning');
+await type('protectors explorers');
+ok(fr.querySelectorAll('a').length >= 2, 'two-word search needs both words', fr.querySelectorAll('a').length);
+await type('zzqqxx');
+ok(/Nothing found/.test(fr.textContent), 'says so when nothing matches');
+await type('ccef');
+fb.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+ok(fr.querySelector('a.on'), 'arrow keys move through results');
+fb.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+await new Promise(r => setTimeout(r, 120));
+ok(visible($('#topic-orgs')) || visible($('#topic-guide')) || visible($('#topic-people')), 'Enter opens the highlighted result');
+fb.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+ok(fb.value === '' && fr.hidden, 'Escape clears the search');
+d.body.focus(); key('/');
+ok(d.activeElement === fb, 'the / key jumps to the search box');
+ok(!!$('#toTop'), 'back-to-top button present');
+
 head('remembers where you were');
+topic('essays'); mode('essays', 'practice');
 ok(w.localStorage.getItem('bcc.topic') === 'essays' && w.localStorage.getItem('bcc.mode.essays') === 'practice', 'topic and mode saved');
 
 head('errors');
@@ -189,3 +269,4 @@ ok(errors.length === 0, 'no runtime errors anywhere', errors.join(' || '));
 console.log('\n' + (fails === 0 ? 'ALL ' + checks + ' DOM CHECKS PASSED' : fails + ' FAILURES out of ' + checks + ' DOM checks'));
 w.close();
 process.exit(fails ? 1 : 0);
+})().catch(e => { console.log('TEST CRASH: ' + e.stack); process.exit(1); });

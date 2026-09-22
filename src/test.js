@@ -195,7 +195,13 @@ ok(A.VERDICTS[0].t.some(t => /GOAT/.test(t)) && A.VERDICTS[4].t.some(t => /cheek
 // ---------- 9. markup ----------
 head('markup');
 const ids = [...new Set((src.match(/\$\("#([A-Za-z0-9_-]+)"/g) || []).map(s => s.slice(4, -1)))];
-const dynamic = ['gCount','gBar','prSel','prText','prBox','prWords','prClock','prChecks','prOutline','prOutlineBox','prTimer','mxN','mxT','mxP','mxStart'];
+const dynamic = ['gCount','gBar','gPrint','gReset','prSel','prText','prBox','prWords','prClock','prChecks','prOutline','prOutlineBox','prTimer','mxN','mxT','mxP','mxStart'];
+['findBox','findRes','toTop','pFold'].forEach(id => ok(html.includes('id="' + id + '"'), 'convenience element exists: ' + id));
+ok(/\.topics\{position:sticky/.test(html), 'tab bar is pinned while scrolling');
+ok(/\.topics\{flex-wrap:nowrap[^}]*overflow-x:auto/.test(html), 'tab bar becomes one swipeable row on phones');
+ok(/scroll-margin-top/.test(html), 'jump targets clear the pinned bar');
+ok(/beforeprint/.test(src) && /afterprint/.test(src), 'printing opens every collapsed section, then restores');
+ok(/e\.key === "\/"/.test(src), 'slash focuses the search box');
 const missing = ids.filter(id => !html.includes('id="' + id + '"') && !dynamic.includes(id));
 ok(missing.length === 0, 'every element referenced by id exists', missing.join(', '));
 const panels = [...new Set((html.match(/data-panel="([^"]+)"/g) || []).map(s => s.slice(12, -1)))];
@@ -210,7 +216,7 @@ panels.forEach(pn => {
 });
 ok(/data-topic="guide"\s+aria-selected="true"/.test(html), 'Midterm Guide is the first, default tab');
 ok((html.match(/<script>/g) || []).length === 1, 'a single script block');
-['div','section','button','nav','main','header','footer','svg','symbol'].forEach(t => {
+['div','section','button','nav','main','header','footer','svg','symbol','details','summary'].forEach(t => {
   const open = (html.match(new RegExp('<' + t + '[\\s>]', 'g')) || []).length;
   const close = (html.match(new RegExp('</' + t + '>', 'g')) || []).length;
   ok(open === close, t + ' tags balanced', open + ' vs ' + close);

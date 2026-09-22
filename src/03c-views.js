@@ -11,6 +11,34 @@ function segWire(sel, attr, fn){
 function divider(){ return '<div class="divider"><span>&#9670;</span></div>'; }
 function getJSON(k, dflt){ try{ var v = store.get(k); return v ? JSON.parse(v) : dflt; }catch(e){ return dflt; } }
 
+/* ---- collapsible sections: open/closed state is remembered per section ---- */
+function isOpen(id, dflt){ var s = store.get("fold:"+id); return s === null ? !!dflt : s === "1"; }
+function fold(id, title, body, o){
+  o = o || {};
+  return '<details class="fold'+(o.wide ? ' wide' : '')+'" data-fold="'+id+'"'+(isOpen(id, o.open) ? ' open' : '')+(o.anchor ? ' id="'+o.anchor+'"' : '')+'>'+
+    '<summary><span>'+title+'</span>'+(o.meta !== undefined ? '<span class="meta">'+o.meta+'</span>' : '')+'</summary>'+
+    '<div class="fold-body">'+body+'</div></details>';
+}
+function more(id, label, body){
+  return '<details class="more" data-fold="'+id+'"'+(isOpen(id, false) ? ' open' : '')+'><summary>'+label+'</summary>'+body+'</details>';
+}
+function foldBar(){ return '<div class="foldbar"><button class="btn sm" type="button" data-fx="open">Expand all</button><button class="btn sm" type="button" data-fx="close">Collapse all</button></div>'; }
+function wireFolds(root){
+  $$("details[data-fold]", root).forEach(function(d){
+    d.addEventListener("toggle", function(){ store.set("fold:"+d.getAttribute("data-fold"), d.open ? "1" : "0"); });
+  });
+  $$(".foldbar button[data-fx]", root).forEach(function(b){
+    b.addEventListener("click", function(){
+      var open = b.getAttribute("data-fx") === "open";
+      $$("details[data-fold], details.outline", root).forEach(function(d){
+        d.open = open;
+        if(d.getAttribute("data-fold")) store.set("fold:"+d.getAttribute("data-fold"), open ? "1" : "0");
+      });
+    });
+  });
+}
+function openAncestors(el){ for(var n = el; n && n.tagName; n = n.parentNode){ if(n.tagName === "DETAILS") n.open = true; } }
+
 /* ================================================================ midterm guide */
 function renderGuide(){
   var done = getJSON("guide", {}), total = 0;
@@ -18,18 +46,18 @@ function renderGuide(){
   var html =
     '<div class="gtop"><div class="box"><h4>What’s on the exam</h4><ul>'+GUIDE.format.map(function(f){ return "<li>"+f+"</li>"; }).join("")+'</ul></div>'+
     '<div class="box"><h4>The rules</h4><ul>'+GUIDE.rules.map(function(r){ return "<li>"+r+"</li>"; }).join("")+'</ul></div></div>'+
-    '<div class="gprog"><span class="count" id="gCount"></span><div class="bar"><i id="gBar" style="width:0"></i></div></div>';
-  GUIDE.sections.forEach(function(s){
-    html += '<div class="gsec"><h2>'+s.h+'</h2>'+divider()+(s.ask ? '<p class="gask">'+s.ask+'</p>' : '');
-    s.items.forEach(function(it){
-      html += '<div class="gitem'+(done[it.id] ? " ok" : "")+'" data-gi="'+it.id+'">'+
+    '<div class="gprog"><span class="count" id="gCount"></span><div class="bar"><i id="gBar" style="width:0"></i></div></div>'+
+    '<div class="gsec">'+foldBar()+'</div>';
+  GUIDE.sections.forEach(function(s, si){
+    var body = (s.ask ? '<p class="gask">'+s.ask+'</p>' : '') + s.items.map(function(it){
+      return '<div class="gitem'+(done[it.id] ? " ok" : "")+'" data-gi="'+it.id+'" id="gi-'+it.id+'">'+
         '<input type="checkbox" aria-label="I can explain '+strip(it.t)+'" data-g="'+it.id+'"'+(done[it.id] ? " checked" : "")+'>'+
         '<div><div class="gt">'+it.t+(it.not ? '<span class="nb">not BCM</span>' : '')+'</div>'+
           (it.ask ? '<div class="gq">'+it.ask+'</div>' : '')+
           '<div class="gs">'+it.short+'</div></div>'+
         '<button class="btn" type="button" data-go="'+it.go+'"'+(it.a ? ' data-a="'+it.a+'"' : '')+'>Study it</button></div>';
-    });
-    html += '</div>';
+    }).join("");
+    html += '<div class="gsec">'+fold("guide-"+si, s.h, body, {open:true, meta:'<span data-gm="'+si+'"></span>'})+'</div>';
   });
   html += '<div class="gsec"><h2>To prepare for the exam</h2>'+divider()+
     '<div class="box"><ul>'+GUIDE.prep.map(function(p){ return "<li>"+p+"</li>"; }).join("")+'</ul></div>'+
@@ -40,13 +68,30 @@ function renderGuide(){
       '<button class="btn" type="button" data-go="essays/practice">Essay practice</button>'+
       '<button class="btn" type="button" data-go="essays/practice" data-reflect="1">Reflective question</button>'+
       '<button class="btn" type="button" id="gPrint">Print this guide</button>'+
+      '<button class="btn" type="button" id="gReset">Reset my checkmarks</button>'+
     '</div></div>';
   $("#guideRoot").innerHTML = html;
+  wireFolds($("#guideRoot"));
   function progress(){
     var d = getJSON("guide", {}), n = Object.keys(d).filter(function(k){ return d[k]; }).length;
     $("#gCount").innerHTML = "Ready on <b>"+n+" of "+total+"</b>";
     $("#gBar").style.width = (n/total*100) + "%";
+    GUIDE.sections.forEach(function(s, si){
+      var k = s.items.filter(function(it){ return d[it.id]; }).length;
+      var m = $('#guideRoot [data-gm="'+si+'"]'); if(m) m.textContent = k + " of " + s.items.length + " ready";
+    });
   }
+  var resetArmed = null;
+  $("#gReset").addEventListener("click", function(){
+    var b = this;
+    if(!resetArmed){
+      b.textContent = "Tap again to clear all";
+      resetArmed = setTimeout(function(){ resetArmed = null; b.textContent = "Reset my checkmarks"; }, 4000);
+      return;
+    }
+    clearTimeout(resetArmed); resetArmed = null;
+    store.set("guide", "{}"); renderGuide();
+  });
   $$("#guideRoot input[data-g]").forEach(function(cb){
     cb.addEventListener("change", function(){
       var d = getJSON("guide", {}); d[cb.getAttribute("data-g")] = cb.checked; store.set("guide", JSON.stringify(d));
@@ -71,6 +116,9 @@ function goTo(path, anchor){
     var el = document.getElementById(anchor);
     if(!el && t === "people"){ setPeopleFilter("all"); el = document.getElementById(anchor); }
     if(!el) return;
+    openAncestors(el);
+    if(el.tagName === "DETAILS") el.open = true;
+    $$("details.more", el).forEach(function(d){ d.open = true; });
     el.scrollIntoView({behavior:"smooth", block:"start"});
     el.classList.add("flashhit"); setTimeout(function(){ el.classList.remove("flashhit"); }, 1800);
   }, 60);
@@ -89,52 +137,60 @@ function renderPeople(){
     return '<article class="pcard" id="p-'+p.id+'">'+(p.guide ? '<span class="star">On the guide</span>' : '')+
       '<h3>'+p.name+'</h3>'+(p.yrs ? '<div class="yrs">'+p.yrs+'</div>' : '')+
       '<div><span class="tag'+(p.bcm ? '' : ' no')+'">'+p.gen+'</span></div>'+
-      '<ul>'+p.pts.map(function(x){ return "<li>"+x+"</li>"; }).join("")+'</ul>'+
+      '<p class="line">'+p.line+'</p>'+
       '<div class="why"><b>Why it matters</b>'+p.why+'</div>'+
-      (p.quote ? '<div class="q">“'+p.quote.t+'”<small>'+p.quote.s+'</small></div>' : '')+
+      more("pm-"+p.id, "Details ("+p.pts.length+")",
+        '<ul>'+p.pts.map(function(x){ return "<li>"+x+"</li>"; }).join("")+'</ul>'+
+        (p.quote ? '<div class="q">“'+p.quote.t+'”<small>'+p.quote.s+'</small></div>' : ''))+
     '</article>';
   }).join("");
+  wireFolds($("#peopleGrid"));
 }
 
 /* ================================================================ organizations */
 function renderOrgs(){
   var rows = [["Main role","role"],["Key people","people"],["Where it fits","when"],["Remember it as","mark"]];
-  var html = '<h2 class="h2">The four on the study guide</h2>'+divider()+
-    '<div class="pgrid">'+ORG_FOCUS.map(function(o){
+  var cards = '<div class="pgrid">'+ORG_FOCUS.map(function(o){
       return '<article class="pcard" id="o-'+o.id+'"><span class="star">On the guide</span><h3>'+o.abbr+'</h3><div class="yrs">'+o.name+'</div>'+
         '<div><span class="tag">'+o.role+'</span></div>'+
-        '<ul>'+o.does.map(function(x){ return "<li>"+x+"</li>"; }).join("")+'</ul>'+
         '<div class="why"><b>Remember it as</b>'+o.mark+'</div>'+
-        '<div class="q">'+o.roots+'<small>'+o.people+'</small></div></article>';
-    }).join("")+'</div>'+
-    '<h2 class="h2">Side by side</h2>'+divider()+
-    '<div class="tblwrap"><table class="tbl"><thead><tr><th></th>'+ORG_FOCUS.map(function(o){ return "<th>"+o.abbr+"</th>"; }).join("")+'</tr></thead><tbody>'+
+        more("om-"+o.id, "What it does",
+          '<ul>'+o.does.map(function(x){ return "<li>"+x+"</li>"; }).join("")+'</ul>'+
+          '<div class="q">'+o.roots+'<small>'+o.people+'</small></div>')+
+        '</article>';
+    }).join("")+'</div>';
+  var table = '<div class="tblwrap"><table class="tbl"><thead><tr><th></th>'+ORG_FOCUS.map(function(o){ return "<th>"+o.abbr+"</th>"; }).join("")+'</tr></thead><tbody>'+
     rows.map(function(r){ return '<tr><td class="head">'+r[0]+'</td>'+ORG_FOCUS.map(function(o){ return '<td class="sm">'+o[r[1]]+'</td>'; }).join("")+'</tr>'; }).join("")+
     '</tbody></table></div>'+
-    '<p class="note">Think in roles: CCEF deepens, ACBC certifies, ABC bridges to the professional world, BCC gathers everyone to the table.</p>'+
-    '<h2 class="h2">The wider landscape</h2>'+divider()+
-    '<div class="rules">'+ORG_OTHER.map(function(o){ return '<div class="rule"><h4>'+o.role+'</h4><p><b>'+o.abbr+'</b></p><p class="ex">'+o.d+'</p></div>'; }).join("")+'</div>';
-  $("#orgChart").innerHTML = html;
+    '<p class="note">Think in roles: CCEF deepens, ACBC certifies, ABC bridges to the professional world, BCC gathers everyone to the table.</p>';
+  var wider = '<div class="rules">'+ORG_OTHER.map(function(o, i){ return '<div class="rule" id="oo-'+i+'"><h4>'+o.role+'</h4><p><b>'+o.abbr+'</b></p><p class="ex">'+o.d+'</p></div>'; }).join("")+'</div>';
+  $("#orgChart").innerHTML = foldBar()+
+    fold("org-four", "The four on the study guide", cards, {open:true, wide:true, meta:"CCEF · ACBC · ABC · BCC"})+
+    fold("org-side", "Side by side", table, {open:true, wide:true})+
+    fold("org-wider", "The wider landscape", wider, {open:false, wide:true, meta:ORG_OTHER.length+" more"});
+  wireFolds($("#orgChart"));
 }
 
 /* ================================================================ history */
 function renderStory(){
-  var html = '<div class="tblwrap" style="max-width:900px;margin:0 auto 30px"><table class="tbl"><thead><tr><th>The four questions</th>'+
+  var table = '<div class="tblwrap"><table class="tbl"><thead><tr><th>The four questions</th>'+
     FRAMES.map(function(f){ return "<th>"+f.name+"</th>"; }).join("")+'</tr></thead><tbody>'+
     FOUR_Q.map(function(q, i){ return '<tr><td class="head">'+q+'</td>'+FRAMES.map(function(f){ return '<td class="sm">'+f.a[i]+'</td>'; }).join("")+'</tr>'; }).join("")+
     '</tbody></table></div>';
-  html += STORY.map(function(s){ return '<div class="note-sec"><h2>'+s.h+'</h2>'+divider()+s.body+'</div>'; }).join("");
-  $("#histStory").innerHTML = html;
+  $("#histStory").innerHTML = foldBar()+
+    fold("st-q", "The four questions, three ways", table, {open:true, wide:true})+
+    STORY.map(function(s, i){ return fold("st-"+i, s.h, '<div class="note-sec">'+s.body+'</div>', {open:i === 0, anchor:"st-"+i}); }).join("");
+  wireFolds($("#histStory"));
 }
 function renderTimeline(){
-  $("#histTimeline").innerHTML = '<div class="tl">'+TIMELINE.map(function(e){
+  $("#histTimeline").innerHTML = '<div class="tl">'+TIMELINE.map(function(e, i){
     if(e.era) return '<div class="era">'+e.era+'</div>';
-    return '<div class="ev'+(e.big ? " big" : "")+'"><div class="y">'+e.y+'</div><div class="t">'+e.t+'<span>'+e.s+'</span></div></div>';
+    return '<div class="ev'+(e.big ? " big" : "")+'" id="tl-'+i+'"><div class="y">'+e.y+'</div><div class="t">'+e.t+'<span>'+e.s+'</span></div></div>';
   }).join("")+'</div>';
 }
 function renderGens(){
   var rows = [["Dates (Basic Map)","dates"],["Dates (lecture)","lect"],["Key figures","who"],["Focus","focus"],["Secondary issues","marks"],["Organizations and growth","orgs"]];
-  var html = '<div class="tblwrap"><table class="tbl"><thead><tr><th></th>'+GENS.map(function(g){ return "<th>"+g.n+" generation</th>"; }).join("")+'</tr></thead><tbody>'+
+  var html = '<div class="tblwrap" id="gens-table"><table class="tbl"><thead><tr><th></th>'+GENS.map(function(g){ return "<th>"+g.n+" generation</th>"; }).join("")+'</tr></thead><tbody>'+
     rows.map(function(r){
       return '<tr><td class="head">'+r[0]+'</td>'+GENS.map(function(g){
         var v = g[r[1]];
@@ -142,25 +198,34 @@ function renderGens(){
       }).join("")+'</tr>';
     }).join("")+'</tbody></table></div>'+
     '<p class="note">The lecture slides and the Basic Map date the generations differently. Both are here; the Map is allowed during the exam, and it stresses that generations are broad phases, not rigid bins.</p>'+
-    '<div class="note-sec" style="margin-top:26px"><div class="boxrow"><div class="box"><h4>Continuity</h4><ul>'+GEN_CONTINUITY.map(function(x){ return "<li>"+x+"</li>"; }).join("")+'</ul></div>'+
-    '<div class="box"><h4>Development</h4><ul>'+GEN_DEVELOPMENT.map(function(x){ return "<li>"+x+"</li>"; }).join("")+'</ul></div></div>'+
-    '<h3 style="text-align:center">Where it may grow next</h3><div class="chips">'+FUTURE.map(function(f){ return '<span class="chip">'+f+'</span>'; }).join("")+'</div></div>';
+    '<div style="margin-top:22px">'+
+    fold("gens-cd", "Continuity and development", '<div class="boxrow"><div class="box"><h4>Continuity</h4><ul>'+GEN_CONTINUITY.map(function(x){ return "<li>"+x+"</li>"; }).join("")+'</ul></div>'+
+      '<div class="box"><h4>Development</h4><ul>'+GEN_DEVELOPMENT.map(function(x){ return "<li>"+x+"</li>"; }).join("")+'</ul></div></div>', {open:true})+
+    fold("gens-next", "Where it may grow next", '<div class="chips">'+FUTURE.map(function(f){ return '<span class="chip">'+f+'</span>'; }).join("")+'</div>', {open:false, meta:FUTURE.length+" areas"})+
+    '</div>';
   $("#histGens").innerHTML = html;
+  wireFolds($("#histGens"));
 }
 
 /* ================================================================ theology */
 function renderTheoNotes(){
   $("#theoNotes").innerHTML = '<div class="secnav">'+THEO.map(function(s){ return '<a href="#theo-'+s.id+'" data-a="theo-'+s.id+'">'+s.h.replace(/“|”/g,"")+'</a>'; }).join("")+'</div>'+
-    THEO.map(function(s){ return '<div class="note-sec" id="theo-'+s.id+'"><h2>'+s.h+'</h2>'+divider()+s.body+'</div>'; }).join("");
+    foldBar()+
+    THEO.map(function(s, i){ return fold("theo-"+s.id, s.h, '<div class="note-sec">'+s.body+'</div>', {open:i === 0, anchor:"theo-"+s.id}); }).join("");
+  wireFolds($("#theoNotes"));
   $$("#theoNotes .secnav a").forEach(function(a){
-    a.addEventListener("click", function(e){ e.preventDefault(); var el = document.getElementById(a.getAttribute("data-a")); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); });
+    a.addEventListener("click", function(e){
+      e.preventDefault();
+      var el = document.getElementById(a.getAttribute("data-a"));
+      if(el){ el.open = true; el.scrollIntoView({behavior:"smooth", block:"start"}); }
+    });
   });
 }
 
 /* ================================================================ essays */
 function renderOutlines(){
-  var html = ESSAYS.map(function(es){
-    return '<details class="outline"><summary>'+es.q+'</summary><div class="body">'+
+  var html = foldBar() + ESSAYS.map(function(es){
+    return '<details class="outline" id="es-'+es.id+'"><summary>'+es.q+'</summary><div class="body">'+
       '<h4>A thesis to build on</h4><p>'+es.thesis+'</p>'+
       '<h4>Points to hit</h4><ul>'+es.pts.map(function(p){ return "<li>"+p+"</li>"; }).join("")+'</ul>'+
       '<h4>Make it stand out</h4><p>'+es.tip+'</p></div></details>';
@@ -169,6 +234,7 @@ function renderOutlines(){
     '<p style="text-align:center;color:var(--ink-soft)">The guidance says to reflect on the practical implications of the doctrines. Prompts to rehearse:</p><ul>'+
     REFLECT.map(function(r){ return "<li>"+r+"</li>"; }).join("")+'</ul></div>';
   $("#essayOutlines").innerHTML = html;
+  wireFolds($("#essayOutlines"));
 }
 var practiceKey = store.get("practice") || "e:gens", practiceTimer = null, practiceBuilt = false;
 var REFLECT_CHECKS = ["Name the doctrine or idea precisely.","Tie it to a Scripture text or a lecture source.","Apply it to a real person or case (Carl, Harold, Catherine…).","Say what it changes in how you would actually care for someone."];
@@ -232,12 +298,14 @@ function startTimer(min){
   tick(); practiceTimer = setInterval(tick, 1000);
 }
 function renderCases(){
-  $("#essayCases").innerHTML = CASES.map(function(c){
-    return '<div class="casecard"><h3>'+c.name+'</h3><div class="src">'+c.src+'</div><p>'+c.story+'</p>'+
+  $("#essayCases").innerHTML = foldBar() + CASES.map(function(c, i){
+    var body = '<div class="casecard" style="box-shadow:none;border:0;padding:0;margin:0"><p>'+c.story+'</p>'+
       '<ul class="asks">'+c.asks.map(function(a){ return "<li>"+a+"</li>"; }).join("")+'</ul>'+
       '<details class="outline" style="margin:12px 0 0;box-shadow:none"><summary style="font-size:15.5px">Angles from the lectures</summary><div class="body">'+
       '<ul>'+c.angles.map(function(a){ return "<li>"+a+"</li>"; }).join("")+'</ul></div></details></div>';
+    return fold("case-"+i, c.name, body, {open:i === 0, anchor:"case-"+i, meta:c.src});
   }).join("");
+  wireFolds($("#essayCases"));
 }
 
 /* ================================================================ mock exam */
@@ -327,6 +395,7 @@ function showTopic(id){
   $$(".topic").forEach(function(s){ s.hidden = (s.id !== "topic-"+id); });
   showMode(id, currentMode[id]);
   store.set("topic", id);
+  if(typeof centerActiveTab === "function") centerActiveTab();
 }
 $$(".topic-btn").forEach(function(b){
   b.addEventListener("click", function(){ showTopic(b.getAttribute("data-topic")); window.scrollTo({top:$(".topics").offsetTop - 8, behavior:"smooth"}); });
@@ -340,10 +409,116 @@ $$(".seg[data-modes]").forEach(function(seg){
 document.addEventListener("keydown", function(e){
   var t = e.target, tag = (t && t.tagName) || "";
   if(/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+  if(e.key === "/"){ e.preventDefault(); window.scrollTo({top:0, behavior:"smooth"}); findBox.focus(); return; }
   if(tag === "BUTTON" && (e.key === " " || e.key === "Enter")) return;
   var h = KEYS[currentTopic+"/"+currentMode[currentTopic]];
   if(h && h(e)) e.preventDefault();
 });
+
+wireFolds($('[data-panel="people/chart"] #pFold').parentNode);
+
+/* ================================================================ search */
+function norm(s){ return strip(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+function escH(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function plain(s){ return strip(String(s)).replace(/&amp;/g,"&").replace(/&nbsp;|&middot;/g," ").replace(/&[a-z]+;/g,"").replace(/\s+/g," ").trim(); }
+var INDEX = [];
+function addIdx(title, where, text, go, a){ var t = plain(title), x = plain(text); INDEX.push({title:t, where:where, text:x, nt:norm(t), nx:norm(x), go:go, a:a || null}); }
+GUIDE.sections.forEach(function(s){ s.items.forEach(function(it){ addIdx(it.t, "Midterm Guide", (it.ask || "")+" "+it.short, "guide/overview", "gi-"+it.id); }); });
+PEOPLE.forEach(function(p){ addIdx(p.name, "Key Figures", [p.line, p.gen, p.why, p.pts.join(" "), p.quote ? p.quote.t+" — "+p.quote.s : ""].join(" "), "people/chart", "p-"+p.id); });
+ORG_FOCUS.forEach(function(o){ addIdx(o.abbr+" — "+o.name, "Organizations", [o.mark, o.role, o.does.join(" "), o.roots, o.people, o.when].join(" "), "orgs/chart", "o-"+o.id); });
+ORG_OTHER.forEach(function(o, i){ addIdx(o.abbr, "Organizations", o.role+". "+o.d, "orgs/chart", "oo-"+i); });
+STORY.forEach(function(s, i){ addIdx(s.h, "History", s.body, "history/story", "st-"+i); });
+TIMELINE.forEach(function(e, i){ if(e.y) addIdx(e.y+" · "+e.t, "Timeline", e.s, "history/timeline", "tl-"+i); });
+GENS.forEach(function(g){ addIdx(g.n+" generation", "Generations", [g.dates+" (lecture: "+g.lect+")", g.who, g.focus, g.marks.join(" "), g.orgs].join(" "), "history/gens", "gens-table"); });
+THEO.forEach(function(s){ addIdx(s.h, "Theology", s.body, "theology/notes", "theo-"+s.id); });
+TERMS.forEach(function(t){ addIdx(t[0], "Term", t[1], "theology/notes", null); });
+VERSES.forEach(function(v){ addIdx(v[0], "Key passage", v[1], "theology/notes", null); });
+ESSAYS.forEach(function(e){ addIdx(e.q, "Essay outline", [e.thesis, e.pts.join(" "), e.tip].join(" "), "essays/outlines", "es-"+e.id); });
+CASES.forEach(function(c, i){ addIdx("Case: "+c.name, "Case study", [c.story, c.asks.join(" "), c.angles.join(" ")].join(" "), "essays/cases", "case-"+i); });
+
+function findIn(q){
+  var words = norm(q).split(/\s+/).filter(function(w){ return w.length > 0; });
+  if(!words.length) return {words:[], hits:[]};
+  var hits = [];
+  INDEX.forEach(function(e){
+    if(!words.every(function(w){ return e.nt.indexOf(w) >= 0 || e.nx.indexOf(w) >= 0; })) return;
+    var score = 0;
+    words.forEach(function(w){
+      if(e.nt.indexOf(w) === 0) score += 15; else if(e.nt.indexOf(w) > 0) score += 9;
+      score += Math.min(e.nx.split(w).length - 1, 5);
+    });
+    if(e.where === "Midterm Guide") score -= 1;          /* the full card outranks the guide's one-line summary */
+    hits.push({e:e, score:score});
+  });
+  hits.sort(function(a, b){ return b.score - a.score; });
+  return {words:words, hits:hits};
+}
+function mark(s, words){
+  var out = escH(s);
+  words.slice().sort(function(a, b){ return b.length - a.length; }).forEach(function(w){
+    var re = new RegExp("(" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig");
+    out = out.replace(re, "<mark>$1</mark>");
+  });
+  return out.replace(/<mark>([^<]*)<mark>([^<]*)<\/mark>([^<]*)<\/mark>/g, "<mark>$1$2$3</mark>");
+}
+function snip(e, words){
+  var low = e.text.toLowerCase(), i = -1;
+  for(var k = 0; k < words.length && i < 0; k++) i = low.indexOf(words[k]);
+  if(i < 0) return mark(e.text.slice(0, 150) + (e.text.length > 150 ? "…" : ""), words);
+  var start = Math.max(0, i - 60), end = Math.min(e.text.length, i + 120);
+  while(start > 0 && e.text.charAt(start - 1) !== " ") start--;
+  return mark((start > 0 ? "…" : "") + e.text.slice(start, end) + (end < e.text.length ? "…" : ""), words);
+}
+var findBox = $("#findBox"), findRes = $("#findRes"), findHits = [], findOn = -1, findTimer = null;
+function renderFind(){
+  var r = findIn(findBox.value);
+  findHits = r.hits.slice(0, 30); findOn = -1;
+  if(!findBox.value.trim()){ findRes.hidden = true; return; }
+  if(!findHits.length){ findRes.innerHTML = '<div class="none">Nothing found for “'+escH(findBox.value.trim())+'”. Try one word, or a last name.</div>'; findRes.hidden = false; return; }
+  findRes.innerHTML = findHits.map(function(h, i){
+    return '<a data-i="'+i+'"><span class="ft">'+mark(h.e.title, r.words)+'</span><span class="fw">'+h.e.where+'</span><span class="fs">'+snip(h.e, r.words)+'</span></a>';
+  }).join("") + (r.hits.length > findHits.length ? '<div class="more">'+(r.hits.length - findHits.length)+' more — add a word to narrow it</div>' : '');
+  findRes.hidden = false;
+  $$("a[data-i]", findRes).forEach(function(a){
+    a.addEventListener("mousedown", function(ev){ ev.preventDefault(); });
+    a.addEventListener("click", function(){ openHit(parseInt(a.getAttribute("data-i"), 10)); });
+  });
+}
+function openHit(i){
+  var h = findHits[i]; if(!h) return;
+  findRes.hidden = true; findBox.blur();
+  goTo(h.e.go, h.e.a);
+}
+function moveFind(step){
+  var links = $$("a[data-i]", findRes); if(!links.length) return;
+  findOn = (findOn + step + links.length) % links.length;
+  links.forEach(function(a, i){ a.classList.toggle("on", i === findOn); });
+  links[findOn].scrollIntoView({block:"nearest"});
+}
+findBox.addEventListener("input", function(){ clearTimeout(findTimer); findTimer = setTimeout(renderFind, 90); });
+findBox.addEventListener("focus", function(){ if(findBox.value.trim()) renderFind(); });
+findBox.addEventListener("blur", function(){ setTimeout(function(){ findRes.hidden = true; }, 120); });
+findBox.addEventListener("keydown", function(e){
+  if(e.key === "ArrowDown"){ e.preventDefault(); moveFind(1); }
+  else if(e.key === "ArrowUp"){ e.preventDefault(); moveFind(-1); }
+  else if(e.key === "Enter"){ e.preventDefault(); openHit(findOn >= 0 ? findOn : 0); }
+  else if(e.key === "Escape"){ findBox.value = ""; findRes.hidden = true; findBox.blur(); }
+});
+
+/* ================================================================ back to top, print, tab bar */
+var toTop = $("#toTop");
+window.addEventListener("scroll", function(){ toTop.classList.toggle("show", window.pageYOffset > 700); }, {passive:true});
+toTop.addEventListener("click", function(){ window.scrollTo({top:0, behavior:"smooth"}); });
+var printClosed = [];
+window.addEventListener("beforeprint", function(){
+  printClosed = $$(".topic:not([hidden]) details").filter(function(d){ return !d.open; });
+  printClosed.forEach(function(d){ d.open = true; });
+});
+window.addEventListener("afterprint", function(){ printClosed.forEach(function(d){ d.open = false; }); printClosed = []; });
+function centerActiveTab(){
+  var bar = $(".topics"), b = $('.topic-btn[aria-selected="true"]');
+  if(bar && b && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = b.offsetLeft - (bar.clientWidth - b.offsetWidth) / 2;
+}
 
 /* ---- come back to where you were ---- */
 (function(){

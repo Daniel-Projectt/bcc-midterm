@@ -17,6 +17,12 @@
     <button class="topic-btn" role="tab" data-topic="exam"     aria-selected="false">Mock Exam</button>
   </nav>
 
+  <div class="findrow" role="search">
+    <input id="findBox" type="search" autocomplete="off" spellcheck="false" placeholder="Find a name, term, verse or idea anywhere on the site" aria-label="Search the whole review">
+    <kbd>/</kbd>
+    <div class="findres" id="findRes" hidden></div>
+  </div>
+
   <main>
 
     <!-- ================= MIDTERM GUIDE ================= -->
@@ -46,6 +52,7 @@
             <button type="button" data-pf="notbcm" aria-pressed="false">Not BCM</button>
           </div>
         </div>
+        <div class="foldbar" id="pFold"><button class="btn sm" type="button" data-fx="open">Expand all details</button><button class="btn sm" type="button" data-fx="close">Collapse all</button></div>
         <div class="pgrid" id="peopleGrid"></div>
       </div>
       <div class="panel" data-panel="people/cards" hidden>
@@ -154,7 +161,9 @@
 
   <footer>
     <p>Built from the Unit 1 and Unit 2 lectures, the Basic Map, and the Midterm Exam Guidance.</p>
-    <span class="keys">Flashcards <kbd>&larr;</kbd> <kbd>&rarr;</kbd> <kbd>Space</kbd> &nbsp;&middot;&nbsp; Quizzes <kbd>1</kbd>&ndash;<kbd>4</kbd> <kbd>Enter</kbd></span>
+    <span class="keys">Search <kbd>/</kbd> &nbsp;&middot;&nbsp; Flashcards <kbd>&larr;</kbd> <kbd>&rarr;</kbd> <kbd>Space</kbd> &nbsp;&middot;&nbsp; Quizzes <kbd>1</kbd>&ndash;<kbd>4</kbd> <kbd>Enter</kbd></span>
   </footer>
 
 </div>
+
+<button class="totop" type="button" id="toTop" aria-label="Back to top" title="Back to top">&#9650;</button>

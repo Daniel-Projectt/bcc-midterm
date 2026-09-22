@@ -1,0 +1,66 @@
+
+/* ================= edition theme: cream paper, charcoal ink, oxblood accents =================
+   Loaded after the Greek base, so it only overrides. Ornaments go warm taupe;
+   oxblood is reserved for labels, active states, rules and buttons.               */
+:root{
+  --bg:#f8f5ee;
+  --surface:#fffefa;
+  --surface-2:#f5f0e7;
+  --ink:#1f1b18;
+  --ink-soft:#4a433d;
+  --muted:#8a8078;
+  --line:#e6dfd3;
+  --line-strong:#cfc4b4;
+  --gold:#7a2f33;
+  --gold-soft:#a99282;
+  --display:"Cormorant Garamond","Palatino Linotype",Palatino,Georgia,serif;
+}
+body{background-image:radial-gradient(900px 520px at 50% -8%,#fffefb 0%,rgba(255,254,251,0) 72%)}
+
+/* masthead */
+header{padding-block:52px 6px}
+.eyebrow{letter-spacing:.34em;margin-bottom:18px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(42px,7.4vw,70px);line-height:1.02;letter-spacing:.004em}
+.sub{font-size:16.5px;margin-top:12px}
+.orn{opacity:.85}
+
+/* headings in the display face */
+.h2,.note-sec h2,.gsec h2,.pcard h3,.casecard h3,details.fold > summary,details.outline summary,.prompt,.qtext,.result h3{font-family:var(--display)}
+.h2,.note-sec h2,.gsec h2{font-size:29px;font-weight:600;letter-spacing:.003em}
+.pcard h3{font-size:27px;font-weight:600;line-height:1.15}
+details.fold > summary{font-size:23px;font-weight:600}
+details.outline summary{font-size:20.5px;font-weight:600}
+.qtext{font-size:clamp(21px,3vw,25px);font-weight:500;line-height:1.4}
+.prompt{font-size:23px;font-weight:500}
+.note-sec h3,.box h4,.exam-tip b,.pcard .why b,.casecard .angles b,details.outline .body h4{letter-spacing:.22em}
+
+/* dividers: a hedera between two hairlines */
+.divider{max-width:250px;margin-top:8px}
+.divider span{font-size:0;line-height:0}
+.divider span::before{content:"\2767";font-size:18px;line-height:1;color:var(--gold);opacity:.8}
+
+/* a fine oxblood rule across the top of cards, like a bookplate */
+.pcard,.qcard,.result,.face,details.fold{border-top:2px solid var(--gold)}
+.pcard,.qcard,.result,details.fold,details.outline,.casecard,.box,.rule,.gitem{border-radius:2px}
+.pcard .tag{border-color:rgba(122,47,51,.35)}
+.pcard .tag.no{color:var(--muted);border-color:var(--line-strong)}
+.qtag{border-color:rgba(122,47,51,.35)}
+.pcard .q,.quote{border-left-color:var(--gold)}
+
+/* controls */
+.btn{border-radius:2px}
+.btn.primary{background:var(--gold);border-color:var(--gold);color:#fbf7f1}
+.btn.primary:hover{background:#5d2226;border-color:#5d2226;color:#fff}
+.seg{border-radius:2px}
+.tile.sel{box-shadow:0 0 0 2px rgba(122,47,51,.16)}
+.findres mark{background:rgba(122,47,51,.13)}
+.findrow input{border-radius:2px}
+.dots i.on{background:var(--gold)}
+.gprog .bar i,.progress i{background:var(--gold)}
+
+/* ornaments, softer */
+.rail .vine{opacity:.55}
+.rail .stem{opacity:.32}
+.rail .bead{opacity:.55}
+.card-corners .c{opacity:.6}
+.tl::before{opacity:.55}

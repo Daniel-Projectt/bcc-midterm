@@ -142,7 +142,7 @@ function makeQuiz(root, gen, opts){
     var body = $(".qbody", root);
     var pct = qs.length ? Math.round(score / qs.length * 100) : 0, v = verdictFor(pct);
     var html = '<div class="result card-corners">'+CORNERS+'<div class="big">'+score+'/'+qs.length+'</div><div class="rsub">'+pct+' percent</div>'+
-      '<h3 style="font-family:var(--serif);font-weight:400;font-size:26px;margin:16px 0 0">'+v.t+'</h3><p class="verdict">'+v.a+'</p>';
+      '<h3 style="font-family:var(--display);font-weight:600;font-size:31px;margin:16px 0 0">'+v.t+'</h3><p class="verdict">'+v.a+'</p>';
     if(opts.showTopic){
       var rows = Object.keys(TOPIC_NAMES).map(function(tp){
         var mine = qs.filter(function(q){ return q.tp === tp; }); if(!mine.length) return "";

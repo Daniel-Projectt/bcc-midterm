@@ -132,7 +132,7 @@ function mockQuestions(cfg){
 /* ================================================================ decks */
 function peopleDeck(){
   return shuffle(PEOPLE).map(function(p){
-    return {front:'<div class="mid" style="font-family:var(--serif);letter-spacing:.02em;text-transform:none">'+p.name+'</div><div class="hint">'+(p.bcm ? "Biblical counseling" : "Not BCM")+'</div>',
+    return {front:'<div class="mid" style="font-family:var(--display);font-weight:600;letter-spacing:.01em;text-transform:none;font-size:clamp(28px,6vw,40px)">'+p.name+'</div><div class="hint">'+(p.bcm ? "Biblical counseling" : "Not BCM")+'</div>',
             back:'<div class="bname">'+p.name+'</div><div class="bsound" style="margin-top:12px">'+p.why+'</div><div class="btr" style="margin-top:10px">'+p.gen+'</div>'};
   });
 }
@@ -142,14 +142,14 @@ function orgDeck(){
             back:'<div class="bname">'+o.abbr+' · '+o.role+'</div><div class="bsound" style="margin-top:12px">'+o.does.join(" ")+'</div><div class="btr" style="margin-top:10px">'+o.people+'</div>'};
   });
   var b = ORG_OTHER.map(function(o){
-    return {front:'<div class="mid" style="font-family:var(--serif);letter-spacing:.02em;text-transform:none;font-size:clamp(20px,4.6vw,28px)">'+o.abbr+'</div><div class="hint">'+o.role+'</div>',
+    return {front:'<div class="mid" style="font-family:var(--display);font-weight:600;letter-spacing:.01em;text-transform:none;font-size:clamp(24px,5vw,32px)">'+o.abbr+'</div><div class="hint">'+o.role+'</div>',
             back:'<div class="bname">'+o.abbr+'</div><div class="bsound" style="margin-top:12px">'+o.d+'</div>'};
   });
   return shuffle(a.concat(b));
 }
 function pairDeck(list){
   return shuffle(list).map(function(p){
-    return {front:'<div class="mid" style="font-family:var(--serif);letter-spacing:.01em;text-transform:none;font-size:clamp(19px,4.2vw,26px);line-height:1.35">'+p[0]+'</div>',
+    return {front:'<div class="mid" style="font-family:var(--display);font-weight:600;letter-spacing:.005em;text-transform:none;font-size:clamp(23px,4.6vw,30px);line-height:1.3">'+p[0]+'</div>',
             back:'<div class="bname">'+p[0]+'</div><div class="bsound" style="margin-top:12px">'+p[1]+'</div>'};
   });
 }

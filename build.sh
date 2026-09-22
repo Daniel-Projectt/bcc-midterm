@@ -7,6 +7,7 @@ S="$D/src"
   echo '<style>'
   cat "$S/00-greek-base.css"
   cat "$S/01-extra.css"
+  cat "$S/01-theme.css"
   echo '</style>'
   echo '</head>'
   echo '<body>'
